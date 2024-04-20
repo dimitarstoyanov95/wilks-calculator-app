@@ -1,0 +1,1 @@
+ /Users/dstoyanov/Desktop/wilks-calculator-app/.dart_tool/flutter_build/f75a13e68e03fe72df45cbcd6d3a92b0/native_assets.yaml: 

@@ -1,0 +1,4 @@
+#Sun Apr 21 02:51:04 EEST 2024
+base.0=/Users/dstoyanov/Desktop/wilks-calculator-app/build/app/intermediates/dex/debug/mergeDexDebug/classes.dex
+path.0=classes.dex
+renamed.0=classes.dex
