@@ -1,5 +1,3 @@
-import 'wilks_score.dart';
-
 class Profile {
   final int? id;
   String firstName;
@@ -7,7 +5,7 @@ class Profile {
   double age;
   String? username;
   String? password;
-  List<WilksScore> myScores = [];
+  
 
   Profile({
     this.id,
@@ -24,7 +22,6 @@ class Profile {
   double get getAge => age;
   String? get getUsername => username;
   String? get getPassword => password;
-  List<WilksScore> get getMyScores => myScores;
 
   // Setters
   set setFirstName(String value) => firstName = value;
@@ -32,7 +29,6 @@ class Profile {
   set setAge(double value) => age = value;
   set setUsername(String? value) => username = value;
   set setPassword(String? value) => password = value;
-  set setMyScores(List<WilksScore> value) => myScores = value;
 
   factory Profile.fromMap(Map<String, dynamic> map) {
     return Profile(
@@ -54,14 +50,5 @@ class Profile {
       'username': username,
       'password': password,
     };
-  }
-
-    // Methods for adding/removing scores
-  void addScore(WilksScore wilksScore) {
-    myScores.add(wilksScore);
-  }
-
-  void removeScore(int? id) {
-    myScores.removeWhere((score) => score.id == id);
   }
 }

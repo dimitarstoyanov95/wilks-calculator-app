@@ -100,14 +100,10 @@ class _SignUpPageState extends State<SignUpPage> {
         username: _usernameController.text,
         password: _passwordController.text,
       );
-
-      // Submit the new profile to the database
       widget.database.createProfile(newProfile);
 
-      // Navigate back to the login page
       Navigator.pop(context);
     } else {
-      // Show error message if any field is empty
       setState(() {
         _showErrorMessage('Please fill in all fields.');
       });

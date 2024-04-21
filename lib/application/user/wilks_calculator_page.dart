@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:wilks_calculator/domain/model/profile.dart';
 import '../../domain/model/wilks_score.dart';
 import '../../domain/repository/sqflite-repository.dart';
 import 'profile_page.dart';
 
 class WilksCalculatorPage extends StatefulWidget {
   final SqfliteRepository database;
+  final Profile loggedInUser;
 
-  const WilksCalculatorPage({Key? key, required this.database}) : super(key: key);
+  const WilksCalculatorPage({Key? key, required this.database, required this.loggedInUser}) : super(key: key);
 
   @override
   State<WilksCalculatorPage> createState() => _WilksCalculatorPageState();
@@ -20,6 +22,7 @@ class _WilksCalculatorPageState extends State<WilksCalculatorPage> {
   void initState() {
     super.initState();
     score = WilksScore(
+      profileId: widget.loggedInUser.getId!,
       bodyweight: 0,
       benchPress: 0,
       squat: 0,
@@ -36,9 +39,7 @@ class _WilksCalculatorPageState extends State<WilksCalculatorPage> {
     const e = 7.01863E-06;
     const f = -1.291E-08;
 
-    final total = score.benchPress +
-        score.deadlift +
-        score.squat;
+    final total = score.benchPress + score.deadlift + score.squat;
     final coefficient = 500 /
         (a +
             b * score.bodyweight +
@@ -71,77 +72,84 @@ class _WilksCalculatorPageState extends State<WilksCalculatorPage> {
         title: const Text("Wilks Calculator", style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.deepPurple,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => ProfilePage(database: widget.database)),
-                );
-              },
-              child: const Text("My Profile"),
-            ),
-            TextField(
-              decoration: const InputDecoration(labelText: "Bodyweight (kg)"),
-              keyboardType: TextInputType.number,
-              onChanged: (value) {
-                score.bodyweight = double.tryParse(value) ?? 0;
-              },
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              decoration: const InputDecoration(labelText: "Bench Press (kg)"),
-              keyboardType: TextInputType.number,
-              onChanged: (value) {
-                score.benchPress = double.tryParse(value) ?? 0;
-              },
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              decoration: const InputDecoration(labelText: "Squat (kg)"),
-              keyboardType: TextInputType.number,
-              onChanged: (value) {
-                score.squat = double.tryParse(value) ?? 0;
-              },
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              decoration: const InputDecoration(labelText: "Deadlift (kg)"),
-              keyboardType: TextInputType.number,
-              onChanged: (value) {
-                score.deadlift = double.tryParse(value) ?? 0;
-              },
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: calculateWilksScore,
-              child: const Text("Calculate Wilks Score"),
-            ),
-            if (showSaveButton) ...[
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => ProfilePage(database: widget.database, loggedInUser: widget.loggedInUser)),
+                  );
+                },
+                child: const Text("My Profile"),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                decoration: const InputDecoration(labelText: "Bodyweight (kg)"),
+                keyboardType: TextInputType.number,
+                onChanged: (value) {
+                  score.bodyweight = double.tryParse(value) ?? 0;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                decoration: const InputDecoration(labelText: "Bench Press (kg)"),
+                keyboardType: TextInputType.number,
+                onChanged: (value) {
+                  score.benchPress = double.tryParse(value) ?? 0;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                decoration: const InputDecoration(labelText: "Squat (kg)"),
+                keyboardType: TextInputType.number,
+                onChanged: (value) {
+                  score.squat = double.tryParse(value) ?? 0;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                decoration: const InputDecoration(labelText: "Deadlift (kg)"),
+                keyboardType: TextInputType.number,
+                onChanged: (value) {
+                  score.deadlift = double.tryParse(value) ?? 0;
+                },
+              ),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: saveScore,
-                child: const Text("Save Score"),
+                onPressed: calculateWilksScore,
+                child: const Text("Calculate Wilks Score"),
               ),
+              if (showSaveButton) ...[
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: saveScore,
+                  child: const Text("Save Score"),
+                ),
+              ],
+              const SizedBox(height: 16),
+              Text(
+                "Wilks Score: ${score.wilksScore}",
+                style: Theme.of(context).textTheme.headline6,
+              ),
+              const SizedBox(height: 16),
+              _buildScoreBoard(),
+              const SizedBox(height: 16),
             ],
-            const SizedBox(height: 16),
-            Text(
-              "Wilks Score: ${score.wilksScore}",
-              style: Theme.of(context).textTheme.headline6,
-            ),
-            const SizedBox(height: 16),
-            _buildScoreBoard(),
-          ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildScoreBoard() {
+    int userWilksScore = score.wilksScore.toInt();
+    String userLifterType = _getLifterType(userWilksScore);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -150,6 +158,12 @@ class _WilksCalculatorPageState extends State<WilksCalculatorPage> {
         _buildScoreRow("Intermediate", 238),
         _buildScoreRow("Advanced", 326),
         _buildScoreRow("Elite", 414),
+        const SizedBox(height: 16),
+        Text(
+          "Status - $userLifterType",
+          style: Theme.of(context).textTheme.headline6,
+          textAlign: TextAlign.center,
+        ),
       ],
     );
   }
@@ -162,5 +176,19 @@ class _WilksCalculatorPageState extends State<WilksCalculatorPage> {
         Text(wilksScore.toString()),
       ],
     );
+  }
+
+  String _getLifterType(int wilksScore) {
+    if (wilksScore < 120) {
+      return "Beginner";
+    } else if (wilksScore < 200) {
+      return "Novice";
+    } else if (wilksScore < 238) {
+      return "Intermediate";
+    } else if (wilksScore < 326) {
+      return "Advanced";
+    } else {
+      return "Elite";
+    }
   }
 }

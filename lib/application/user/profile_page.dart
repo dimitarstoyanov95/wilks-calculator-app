@@ -1,23 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:wilks_calculator/domain/repository/sqflite-repository.dart';
 import '../../domain/model/profile.dart';
+import '../../domain/model/wilks_score.dart';
 
 class ProfilePage extends StatefulWidget {
   final SqfliteRepository database;
+  final Profile loggedInUser;
 
-  const ProfilePage({Key? key, required this.database}) : super(key: key);
+  const ProfilePage({Key? key, required this.database, required this.loggedInUser}) : super(key: key);
 
   @override
-  _ProfilePageState createState() => _ProfilePageState();
+  State<ProfilePage> createState() => _ProfilePageState();
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  late Profile? loggedInUser;
+  late List<WilksScore> myScores;
 
   @override
   void initState() {
     super.initState();
-    loggedInUser = widget.database.getLoggedInProfile() as Profile?;
+    fetchScoresForProfile(widget.loggedInUser.getId!);
+  }
+
+  Future<void> fetchScoresForProfile(int profileId) async {
+    List<WilksScore> scores = await widget.database.getScoresForProfile(profileId);
+    setState(() {
+      myScores = scores;
+    });
   }
 
   @override
@@ -41,15 +50,15 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ],
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             Text(
               "User Info",
               style: Theme.of(context).textTheme.headline6,
             ),
             const SizedBox(height: 8),
-            Text("First Name: ${loggedInUser?.firstName ?? ''}"),
-            Text("Last Name: ${loggedInUser?.lastName ?? ''}"),
-            Text("Age: ${loggedInUser?.age ?? ''}"),
+            Text("First Name: ${widget.loggedInUser.firstName}"),
+            Text("Last Name: ${widget.loggedInUser.lastName}"),
+            Text("Age: ${widget.loggedInUser.age}"),
             const SizedBox(height: 16),
             Text(
               "My Scores",
@@ -58,28 +67,24 @@ class _ProfilePageState extends State<ProfilePage> {
             const SizedBox(height: 8),
             Expanded(
               child: ListView.builder(
-                itemCount: loggedInUser?.myScores.length,
+                itemCount: myScores.length,
                 itemBuilder: (context, index) {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       ListTile(
-                        title: Text("Score ${index}"),
+                        title: Text("Score ${index + 1}"),
                         subtitle: Text(
-                          "Bodyweight: ${loggedInUser?.myScores[index].bodyweight}, Bench Press: ${loggedInUser?.myScores[index].benchPress}, Squat: ${loggedInUser?.myScores[index].squat}, Deadlift: ${loggedInUser?.myScores[index].deadlift}, Wilks Score: ${loggedInUser?.myScores[index].wilksScore}",
+                          "Bodyweight: ${myScores[index].bodyweight}, Bench Press: ${myScores[index].benchPress}, Squat: ${myScores[index].squat}, Deadlift: ${myScores[index].deadlift}, Wilks Score: ${myScores[index].wilksScore}",
                         ),
                       ),
-                      // ElevatedButton(
-                      //   onPressed: () {
-                      //     // Remove the score from the database
-                      //     setState(() {
-                      //       loggedInUser?.myScores.removeAt(index);
-                      //     });
-                      //     widget.dbHelper.deleteWilksScore(
-                      //         loggedInUser?.myScores[index].getId);
-                      //   },
-                      //   child: const Text("Delete"),
-                      // ),
+                      ElevatedButton(
+                        onPressed: () {
+                          widget.database.deleteWilksScore(myScores[index].getId!);
+                          fetchScoresForProfile(widget.loggedInUser.getId!);
+                        },
+                        child: const Text("Delete"),
+                      ),
                       const SizedBox(height: 16),
                     ],
                   );

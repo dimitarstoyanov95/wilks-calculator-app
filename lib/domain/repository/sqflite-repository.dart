@@ -28,8 +28,8 @@ class SqfliteRepository {
             firstName TEXT,
             lastName TEXT,
             age REAL,
-            username TEXT,
-            password TEXT
+            username TEXT, -- Add UNIQUE constraint to username
+            password TEXT -- Add UNIQUE constraint to password
           )
         ''');
     await db.execute('''
@@ -44,11 +44,6 @@ class SqfliteRepository {
             FOREIGN KEY (profileId) REFERENCES $profileTable(id)
           )
         ''');
-    await db.execute('''
-          CREATE TABLE $loggedInUserTable (
-            userId INTEGER PRIMARY KEY
-          )
-        ''');
   }
 
   Future<void> createProfile(Profile profile) async {
@@ -59,39 +54,30 @@ class SqfliteRepository {
     );
   }
 
-  Future<List<Profile>> getProfiles() async {
-    final List<Map<String, dynamic>> maps = await _database.query(profileTable);
-    return List.generate(maps.length, (i) {
-      return Profile.fromMap(maps[i]);
-    });
-  }
-
-  // Similar methods for updating and deleting profiles
-
   Future<void> createWilksScore(WilksScore score) async {
-    await _database.insert(
-      scoreTable,
-      score.toMap(),
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
-  }
+  await _database.insert(
+    scoreTable,
+    score.toMap(),
+    conflictAlgorithm: ConflictAlgorithm.replace,
+  );
+}
 
   Future<List<WilksScore>> getScoresForProfile(int profileId) async {
-    final List<Map<String, dynamic>> maps = await _database.query(
-      scoreTable,
-      where: 'profileId = ?',
-      whereArgs: [profileId],
-    );
-    return List.generate(maps.length, (i) {
-      return WilksScore.fromMap(maps[i]);
-    });
-  }
+  final List<Map<String, dynamic>> maps = await _database.query(
+    scoreTable,
+    where: 'profileId = ?',
+    whereArgs: [profileId],
+  );
+  return List.generate(maps.length, (i) {
+    return WilksScore.fromMap(maps[i]);
+  });
+}
 
-  Future<void> deleteProfile(int id) async {
+  Future<void> deleteProfile(String username) async {
     await _database.delete(
       profileTable,
-      where: 'id = ?',
-      whereArgs: [id],
+      where: 'username = ?',
+      whereArgs: [username],
     );
   }
 
@@ -114,29 +100,32 @@ class SqfliteRepository {
     return result.isNotEmpty;
   }
 
-  Future<void> setLoggedInProfile(int userId) async {
-    await _database.delete(loggedInUserTable);
-    await _database.insert(loggedInUserTable, {'userId': userId});
-  }
+  Future<Profile?> update(Profile updatedProfile, String username) async {
+  final int rowsAffected = await _database.update(
+    profileTable,
+    updatedProfile.toMap(),
+    where: 'username = ?',
+    whereArgs: [username],
+  );
 
-  Future<Profile?> getLoggedInProfile() async {
-    final List<Map<String, dynamic>> result = await _database.query(
-      loggedInUserTable,
-      limit: 1,
-    );
-
-    if (result.isNotEmpty) {
-      final int userId = result[0]['userId'];
-      final List<Map<String, dynamic>> profileResult = await _database.query(
-        profileTable,
-        where: 'id = ?',
-        whereArgs: [userId],
-      );
-
-      if (profileResult.isNotEmpty) {
-        return Profile.fromMap(profileResult[0]);
-      }
-    }
+  if (rowsAffected > 0) {
+    return updatedProfile;
+  } else {
     return null;
   }
+}
+
+  Future<Profile?> getUserByUsername(String username) async {
+  final List<Map<String, dynamic>> maps = await _database.query(
+    profileTable,
+    where: 'username = ?',
+    whereArgs: [username],
+    limit: 1,
+  );
+
+  if (maps.isNotEmpty) {
+    return Profile.fromMap(maps[0]);
+  }
+  return null;
+}
 }

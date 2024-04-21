@@ -1,5 +1,6 @@
 class WilksScore {
-  final int? id;
+   final int? id;
+  final int profileId;
   double bodyweight;
   double benchPress;
   double squat;
@@ -8,6 +9,7 @@ class WilksScore {
 
   WilksScore({
     this.id,
+    required this.profileId,
     required this.bodyweight,
     required this.benchPress,
     required this.squat,
@@ -17,6 +19,7 @@ class WilksScore {
 
   // Getters
   int? get getId => id;
+  int? get getProfileId => profileId;
   double get getBodyweight => bodyweight;
   double get getBenchPress => benchPress;
   double get getSquat => squat;
@@ -33,6 +36,7 @@ class WilksScore {
   factory WilksScore.fromMap(Map<String, dynamic> map) {
     return WilksScore(
       id: map['id'],
+      profileId: map['profileId'], // Initialize profileId from map
       bodyweight: map['bodyweight'],
       benchPress: map['benchPress'],
       squat: map['squat'],
@@ -44,6 +48,7 @@ class WilksScore {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
+      'profileId': profileId, // Include profileId in the map
       'bodyweight': bodyweight,
       'benchPress': benchPress,
       'squat': squat,
